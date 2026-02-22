@@ -5,5 +5,6 @@ a short and simple script that updates your NVIDIA drivers automatically!
 
 ### Open a terminal and copy this command:
 ```
-sudo curl xxx-xxx-xxx
+sudo curl https://github.com/AvocadoChip/Automatic-Fedora-update-script-for-NVIDIA-drivers/blob/main/NVIDIA%20drivers%20update.sh | sudo curl 
+https://github.com/AvocadoChip/Automatic-Fedora-update-script-for-NVIDIA-drivers/blob/main/Update%20NVIDIA%20drivers
 ```

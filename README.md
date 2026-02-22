@@ -1,4 +1,5 @@
-# Automatic Fedora update script for NVIDIA drivers
+# AutoChip
+## Complete driver utility for Fedora based systems
 a short and simple script that updates your NVIDIA drivers automatically!
 
 ## Follow the steps below to ensure correct implimentation

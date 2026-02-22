@@ -1,35 +1,97 @@
 #!/bin/bash
 
-# 1. Check if RPM Fusion is enabled (The 'Official' Fedora way)
-if ! dnf repolist | grep -q "rpmfusion-nonfree-nvidia-driver"; then
-    echo "Error: RPM Fusion NVIDIA repo not found. This script only uses the official repository."
-    exit 1
+# --- 1. PRIVILEGE ELEVATION ---
+if [ "$EUID" -ne 0 ]; then
+    echo "NVIDIA Maintenance Tool: Requesting administrative privileges..."
+    exec sudo "$0" "$@"
 fi
 
-echo "--- Checking for NVIDIA Driver Updates ---"
+# --- 2. FUNCTIONS ---
+finish() {
+    local exit_code=$1
+    echo -e "\n--- Process Finished ---"
+    read -n 1 -s -r -p "Press any key to close this window..."
+    echo ""
+    exit "$exit_code"
+}
 
-# 2. Check for updates (using dnf5 logic if available)
-CHECK_UPDATE=$(dnf check-update *nvidia* 2>/dev/null)
-UPDATE_STATUS=$?
+confirm() {
+    read -r -p "${1:-Are you sure?} [y/N] " response
+    case "$response" in
+        [yY][eE][sS]|[yY]) return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
-if [ $UPDATE_STATUS -eq 100 ]; then
-    echo "Update found! Installing now..."
-    sudo dnf upgrade *nvidia* -y
-    
-    echo "--- Building Kernel Module (DO NOT REBOOT) ---"
-    # 3. This is the crucial part: it forces the build in the foreground
-    sudo akmods --force
-    
-    # 4. Final verification check
-    MOD_VERSION=$(modinfo -F version nvidia 2>/dev/null)
-    if [ $? -eq 0 ]; then
-        echo "Success! NVIDIA Driver version $MOD_VERSION is built and ready."
-        echo "You can now safely reboot your system."
+echo "################################################"
+echo "#      NVIDIA Complete Driver Utility          #"
+echo "################################################"
+
+# --- 3. PRE-FLIGHT ---
+if ! lspci | grep -iE 'vga|3d' | grep -iq nvidia; then
+    echo "Error: No NVIDIA GPU detected. Is the card seated correctly?"
+    finish 1
+fi
+
+if mokutil --sb-state 2>/dev/null | grep -q "enabled"; then
+    echo "(!) NOTICE: Secure Boot is ENABLED."
+    echo "Drivers will be installed, but you MUST sign them or disable Secure Boot"
+    echo "in your BIOS for the GPU to actually turn on."
+    echo "------------------------------------------------"
+fi
+
+# --- 4. REPO SETUP ---
+if ! dnf repolist | grep -q "rpmfusion-nonfree-nvidia-driver"; then
+    echo "Required repositories are missing."
+    if confirm "Enable RPM Fusion (Free/Non-Free) and NVIDIA repos?"; then
+        dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+                       https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+        dnf config-manager --set-enabled rpmfusion-nonfree-nvidia-driver
+        dnf makecache
     else
-        echo "Warning: Driver build might have failed. Check 'journalctl -xe' before rebooting."
+        echo "Cannot proceed without RPM Fusion. Exiting."
+        finish 1
+    fi
+fi
+
+# --- 5. INSTALLATION / REPAIR ---
+if ! rpm -q xorg-x11-drv-nvidia &>/dev/null; then
+    echo "NVIDIA drivers are not currently installed."
+    if confirm "Perform a full installation (includes 32-bit libs for Steam/Gaming)?"; then
+        echo "Installing drivers, CUDA, and kernel headers..."
+        # Added .i686 libs for Steam/Wine compatibility
+        dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda \
+                       xorg-x11-drv-nvidia-libs.i686 kernel-devel-$(uname -r) kernel-headers
+        
+        echo "Forcing kernel module build..."
+        akmods --force
+        dracut --force
+        echo "Done."
+    fi
+fi
+
+# --- 6. UPDATE CHECK ---
+echo "Checking for NVIDIA package updates..."
+dnf check-update *nvidia* &>/dev/null
+if [ $? -eq 100 ]; then
+    echo "Updates are available."
+    if confirm "Would you like to upgrade the NVIDIA drivers now?"; then
+        dnf upgrade -y *nvidia*
+        dnf install -y kernel-devel-$(uname -r) # Ensure headers match current kernel
+        echo "Rebuilding modules for the updated version..."
+        akmods --force
+        echo "Update successful."
     fi
 else
-    echo "Everything is up to date. No action needed."
+    echo "Everything is up to date."
 fi
-echo ""
-read -p "Press Enter to close this window..."
+
+# Final check to see if the driver is actually seen by the kernel
+if modinfo nvidia &>/dev/null; then
+    echo -e "\n[SUCCESS] NVIDIA module is present in the system."
+    echo "If this is a new install, please REBOOT now."
+else
+    echo -e "\n[WARNING] Module 'nvidia' not found. You may need to reboot or check Secure Boot."
+fi
+
+finish 0

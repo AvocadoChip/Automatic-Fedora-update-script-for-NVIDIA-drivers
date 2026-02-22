@@ -1,4 +1,4 @@
-# Automatic_Fedora_update_script_for_NVIDIA_drivers
+# Automatic Fedora update script for NVIDIA drivers
 a short and simple script that updates your NVIDIA drivers automatically!
 
 ## Follow the steps below to ensure correct implimentation

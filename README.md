@@ -1,6 +1,5 @@
 # AutoChip
-NVIDIA Complete Driver Utility -
- a short and simple script that updates your NVIDIA drivers automatically!
+NVIDIA Complete Driver Utility  -  a short and simple script that updates your NVIDIA drivers automatically!
 
 ## Follow the steps below to ensure correct implimentation
 

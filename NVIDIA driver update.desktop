@@ -1,9 +1,0 @@
-#!/usr/bin/env xdg-open
-[Desktop Entry]
-Name=Update NVIDIA Drivers
-Comment=Checks for NVIDIA updates and builds modules
-Exec=/home/kevin/Desktop/'NVIDIA drivers update.sh'
-Icon=system-software-update
-Terminal=true
-Type=Application
-Categories=System;

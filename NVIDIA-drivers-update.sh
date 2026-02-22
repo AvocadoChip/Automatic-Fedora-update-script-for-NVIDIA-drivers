@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Initialize change tracker
+CHANGES_MADE=false
+
+# --- SELF-SPAWN LOGIC ---
+if [ "$1" != "run" ]; then
+    konsole -e /bin/bash -c "$0 run"
+    exit 0
+fi
+
 # --- 1. PRIVILEGE ELEVATION ---
 if [ "$EUID" -ne 0 ]; then
     echo "NVIDIA Maintenance Tool: Requesting administrative privileges..."
@@ -10,9 +19,40 @@ fi
 finish() {
     local exit_code=$1
     echo -e "\n--- Process Finished ---"
-    read -n 1 -s -r -p "Press any key to close this window..."
-    echo ""
-    exit "$exit_code"
+
+    if [ "$CHANGES_MADE" = true ]; then
+        echo "------------------------------------------------"
+        echo "What would you like to do now?"
+        echo "  [rb] REBOOT system (Requires typing 'rb')"
+        echo "  [q]  EXIT terminal (Default - just press Enter)"
+        echo "------------------------------------------------"
+        
+        while true; do
+            echo "Selection: "
+            read -r response
+            response=${response:-q}
+
+            case "$response" in
+                [rR][bB])
+                    echo "Rebooting now..."
+                    reboot
+                    ;;
+                [qQ])
+                    echo "Exiting..."
+                    exit "$exit_code"
+                    ;;
+                *)
+                    echo "Invalid input. Please type 'rb' to reboot or 'q' to exit."
+                    echo "" # Adds a newline before asking again
+                    ;;
+            esac
+        done
+    else
+        # If nothing was done, use the simple exit
+        read -n 1 -s -r -p "Press any key to close this window..."
+        echo ""
+        exit "$exit_code"
+    fi
 }
 
 confirm() {
@@ -59,13 +99,13 @@ if ! rpm -q xorg-x11-drv-nvidia &>/dev/null; then
     echo "NVIDIA drivers are not currently installed."
     if confirm "Perform a full installation (includes 32-bit libs for Steam/Gaming)?"; then
         echo "Installing drivers, CUDA, and kernel headers..."
-        # Added .i686 libs for Steam/Wine compatibility
         dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda \
                        xorg-x11-drv-nvidia-libs.i686 kernel-devel-$(uname -r) kernel-headers
         
         echo "Forcing kernel module build..."
         akmods --force
         dracut --force
+        CHANGES_MADE=true
         echo "Done."
     fi
 fi
@@ -77,21 +117,21 @@ if [ $? -eq 100 ]; then
     echo "Updates are available."
     if confirm "Would you like to upgrade the NVIDIA drivers now?"; then
         dnf upgrade -y *nvidia*
-        dnf install -y kernel-devel-$(uname -r) # Ensure headers match current kernel
+        dnf install -y kernel-devel-$(uname -r)
         echo "Rebuilding modules for the updated version..."
         akmods --force
+        CHANGES_MADE=true
         echo "Update successful."
     fi
 else
     echo "Everything is up to date."
 fi
 
-# Final check to see if the driver is actually seen by the kernel
+# Final check
 if modinfo nvidia &>/dev/null; then
     echo -e "\n[SUCCESS] NVIDIA module is present in the system."
-    echo "If this is a new install, please REBOOT now."
 else
-    echo -e "\n[WARNING] Module 'nvidia' not found. You may need to reboot or check Secure Boot."
+    echo -e "\n[WARNING] Module 'nvidia' not found."
 fi
 
 finish 0

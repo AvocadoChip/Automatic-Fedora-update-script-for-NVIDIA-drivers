@@ -9,7 +9,7 @@ NVIDIA Complete Driver Utility  -  a short and simple script that updates your N
    sudo dnf copr enable avocadochip/AutoChip
    ```
 
-2. Intall program via dnf (this downloads AutoChip onto your computer for later use)
+2. Intall program via dnf (this installs AutoChip onto your computer for later use)
    ```
    sudo dnf install autochip
    ```

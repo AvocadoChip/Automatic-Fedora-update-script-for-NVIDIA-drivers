@@ -3,6 +3,22 @@ NVIDIA Complete Driver Utility  -  a short and simple script that updates your N
 
 ## Follow the steps below to ensure correct implimentation
 
+## Best alternative for automatic install and managment
+1. Enable required repository
+   ```
+   sudo dnf copr enable avocadochip/AutoChip
+   ```
+
+2. Intall program via dnf (this downloads AutoChip onto your computer for later use)
+   ```
+   sudo dnf install autochip
+   ```
+
+3. Open the program at any time by either opening it through the GU (search), or running this command in any terminal:
+   ```
+   autochip
+   ```
+
 ## Signing the drivers (THIS IS CRUTIAL IF SECURE BOOT IS ENABLED!)
 
 ### Step 1: Open a terminal and run the following commands
@@ -38,7 +54,7 @@ NVIDIA Complete Driver Utility  -  a short and simple script that updates your N
 3. You are now done signing the drivers! You 
 
 
-## Downloading the drivers
+## Running the program temporarily (no install required)
 
 ### Step 1: Open a terminal in the desktop and copy this command:
 ```

@@ -42,13 +42,8 @@ NVIDIA Complete Driver Utility  -  a short and simple script that updates your N
 
 ### Step 1: Open a terminal in the desktop and copy this command:
 ```
-sudo curl https://github.com/AvocadoChip/Automatic-Fedora-update-script-for-NVIDIA-drivers/releases/download/Releases/NVIDIA-drivers-update.sh | bash
+sudo curl -s https://github.com/AvocadoChip/AutoChip/releases/download/Release-2.0/AutoChip.sh | bash
 ```
 
-### Step 3: Make the .sh file executable (ensure that your terminal is still in desktop):
-```
-sudo chmod +x NVIDIA-drivers-update.sh
-```
-
-### Step 2: Wait for update to finish and/or follow the given instructions
-This step is crutial! If you at any point during the installation close the terminal window or turn of your computer, your drivers WILL break
+### Step 2: Follow the given instructions
+The program is very straightforward, and explains everything along the way.
